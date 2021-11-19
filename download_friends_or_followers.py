@@ -1,7 +1,7 @@
 import argparse
 import configparser
 import pandas as pd
-from tweepy import API, Cursor, OAuthHandler, TweepError
+from tweepy import API, Cursor, OAuthHandler, TweepyException
 
 class Bot(object):
     '''Saves friends and/or followers of a Twitter handle to CSV file(s).'''
@@ -25,19 +25,19 @@ class Bot(object):
         auth.set_access_token(access_token, access_secret)
         
         # Authenticate and set API 
-        self.api = API(auth, wait_on_rate_limit=True, wait_on_rate_limit_notify=True)
+        self.api = API(auth, wait_on_rate_limit=True)
 
     def get_follower_ids(self, screen_name):
         '''Returns follower ids of passed screen_name.'''
         follower_ids = []
-        for fid in Cursor(self.api.followers_ids, screen_name=screen_name, count=5000).items():
+        for fid in Cursor(self.api.get_follower_ids, screen_name=screen_name, count=5000).items():
             follower_ids.append(fid)
         return follower_ids
 
     def get_friend_ids(self, screen_name):
         '''Returns friend ids of passed screen_name.'''
         friend_ids = []
-        for fid in Cursor(self.api.friends_ids, screen_name=screen_name, count=5000).items():
+        for fid in Cursor(self.api.get_friend_ids, screen_name=screen_name, count=5000).items():
             friend_ids.append(fid)
         return friend_ids
 
@@ -49,7 +49,7 @@ class Bot(object):
         for i in range(0, len(user_ids), 100):
             try:
                 chunk = user_ids[i:i+100]
-                user_info.extend(self.api.lookup_users(user_ids=chunk))
+                user_info.extend(self.api.lookup_users(user_id=chunk))
             except:
                 import traceback
                 traceback.print_exc()
