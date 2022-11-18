@@ -1,6 +1,7 @@
 import argparse
 import configparser
 import pandas as pd
+import time
 from tweepy import API, Cursor, OAuthHandler, TweepyException
 
 class Bot(object):
@@ -15,16 +16,16 @@ class Bot(object):
         configs = configparser.ConfigParser()
         configs.read('./config.ini')
         keys = configs['TWITTER']
-        consumer_key = keys['CONSUMER_KEY'] 
-        consumer_secret = keys['CONSUMER_SECRET'] 
+        consumer_key = keys['CONSUMER_KEY']
+        consumer_secret = keys['CONSUMER_SECRET']
         access_token = keys['ACCESS_TOKEN']
-        access_secret = keys['ACCESS_SECRET'] 
+        access_secret = keys['ACCESS_SECRET']
 
         # Get tweepy.OAuthHandler object that will help authenticate
         auth = OAuthHandler(consumer_key, consumer_secret)
         auth.set_access_token(access_token, access_secret)
-        
-        # Authenticate and set API 
+
+        # Authenticate and set API
         self.api = API(auth, wait_on_rate_limit=True)
 
     def get_follower_ids(self, screen_name):
@@ -42,7 +43,7 @@ class Bot(object):
         return friend_ids
 
     def get_user_info(self, user_ids):
-        '''Gets all user info. 
+        '''Gets all user info.
         API.lookup_users has a rate limit of about 100 * 180 = 18K lookups each 15 min window.
         It only accepts 100 user ids at a time.'''
         user_info = []
@@ -55,27 +56,29 @@ class Bot(object):
                 traceback.print_exc()
                 print('Something went wrong, skipping...')
         return user_info
-    
+
     def download_friends(self, handle):
         '''Downloads friends of passed handle.'''
-        filepath = handle + '_friends.csv'
+        now = time.strftime("_%Y-%m-%d-%H-%M-%S%Z")
+        filepath = handle + now + '_friends.csv'
         ids = self.get_friend_ids(handle)
         self.download(ids, filepath)
-        
+
     def download_followers(self, handle):
         '''Downloads followers of passed handle.'''
-        filepath = handle + '_followers.csv'
+        now = time.strftime("_%Y-%m-%d-%H-%M-%S%Z")
+        filepath = handle + now + '_followers.csv'
         ids = self.get_follower_ids(handle)
         self.download(ids, filepath)
-        
+
     def download(self, ids, filepath):
         '''Downloads passed users.'''
         data = [x._json for x in self.get_user_info(ids)]
         df = pd.DataFrame(data)
-        df = df[['id', 'name', 'screen_name', 'location', 'description', 'url', 
+        df = df[['id', 'name', 'screen_name', 'location', 'description', 'url',
                  'followers_count', 'friends_count', 'created_at', 'verified']]
         df.to_csv(filepath, index=False)
-        
+
     def execute(self, handle, which):
         '''Runs bot.'''
         if which == 'friends':
@@ -96,9 +99,3 @@ if __name__ == '__main__':
     # Run the bot
     bot = Bot()
     bot.execute(args.user, args.type)
-
-
-
-
-
-
