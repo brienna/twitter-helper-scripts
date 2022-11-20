@@ -1,2 +1,2 @@
-tweepy==3.9.0
-pandas==1.1.0
+tweepy~=4.12.1
+pandas~=1.5.1
